@@ -1,28 +1,83 @@
 package at.tomtasche.joppfm;
 
+import java.util.List;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
-import android.app.Activity;
+import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.widget.ArrayAdapter;
+import at.tomtasche.joppfm.database.Message;
+import at.tomtasche.joppfm.database.MessageDataSource;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ListActivity {
 
 	private AuthPreferences authPreferences;
+	private MessageDataSource datasource;
+	private Handler handler;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
 
 		authPreferences = new AuthPreferences(this);
-		if (authPreferences.getUser() == null) {
-			requestToken();
-		} else {
+
+		invalidateToken();
+
+		if (authPreferences.getUser() != null
+				&& authPreferences.getPassword() != null) {
 			startService();
+		} else {
+			requestToken();
 		}
+
+		datasource = new MessageDataSource(this);
+		datasource.open();
+
+		HandlerThread thread = new HandlerThread("workerThread");
+		thread.start();
+		handler = new Handler(thread.getLooper());
+		handler.post(new Runnable() {
+
+			@Override
+			public void run() {
+				queryMessages();
+
+				scheduleRequery();
+			}
+		});
+	}
+
+	private void scheduleRequery() {
+		handler.postDelayed(new Runnable() {
+
+			@Override
+			public void run() {
+				queryMessages();
+
+				scheduleRequery();
+			}
+		}, 1000);
+	}
+
+	private void queryMessages() {
+		final List<Message> values = datasource.getAllMessages();
+
+		runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				ArrayAdapter<Message> adapter = new ArrayAdapter<Message>(
+						MainActivity.this, android.R.layout.simple_list_item_1,
+						values);
+				setListAdapter(adapter);
+			}
+		});
 	}
 
 	@Override
@@ -38,6 +93,15 @@ public class MainActivity extends Activity {
 		Intent intent = new Intent(this, ConnectionService.class);
 
 		startService(intent);
+	}
+
+	private void invalidateToken() {
+		AccountManager accountManager = AccountManager.get(this);
+		accountManager.invalidateAuthToken("com.google",
+				authPreferences.getPassword());
+
+		authPreferences.setUser(null);
+		authPreferences.setPassword(null);
 	}
 
 	private void requestToken() {

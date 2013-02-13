@@ -6,14 +6,14 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.util.Log;
-import at.tomtasche.joppfm.database.MessageDataSource;
+import at.tomtasche.joppfm.database.MessageDatabase;
 import at.tomtasche.joppfm.xmpp.ConnectionManager;
 
 public class ConnectionService extends Service implements MessageCallback {
 
 	private ConnectionManager manager;
 	private Handler worker;
-	private MessageDataSource database;
+	private MessageDatabase database;
 
 	private AuthPreferences authPreferences;
 
@@ -33,7 +33,7 @@ public class ConnectionService extends Service implements MessageCallback {
 
 			@Override
 			public void run() {
-				database = new MessageDataSource(ConnectionService.this);
+				database = new MessageDatabase(ConnectionService.this);
 			}
 		});
 

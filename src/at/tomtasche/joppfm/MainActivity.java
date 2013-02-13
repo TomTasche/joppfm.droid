@@ -13,12 +13,12 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.widget.ArrayAdapter;
 import at.tomtasche.joppfm.database.Message;
-import at.tomtasche.joppfm.database.MessageDataSource;
+import at.tomtasche.joppfm.database.MessageDatabase;
 
 public class MainActivity extends ListActivity {
 
 	private AuthPreferences authPreferences;
-	private MessageDataSource datasource;
+	private MessageDatabase database;
 	private Handler handler;
 
 	@Override
@@ -36,8 +36,8 @@ public class MainActivity extends ListActivity {
 			requestToken();
 		}
 
-		datasource = new MessageDataSource(this);
-		datasource.open();
+		database = new MessageDatabase(this);
+		database.open(false);
 
 		HandlerThread thread = new HandlerThread("workerThread");
 		thread.start();
@@ -66,7 +66,7 @@ public class MainActivity extends ListActivity {
 	}
 
 	private void queryMessages() {
-		final List<Message> values = datasource.getAllMessages();
+		final List<Message> values = database.getAllMessages();
 
 		runOnUiThread(new Runnable() {
 

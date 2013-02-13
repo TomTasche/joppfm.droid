@@ -1,12 +1,23 @@
 package at.tomtasche.joppfm.database;
 
-import android.provider.BaseColumns;
+import android.database.Cursor;
 
-public class Message implements BaseColumns {
+public class Message {
+
+	public static Message fromCursor(Cursor cursor) {
+		Message message = new Message();
+		message.setId(cursor.getLong(0));
+		message.setBody(cursor.getString(1));
+		message.setFrom(cursor.getString(2));
+		message.setSent(cursor.getInt(3) > 0);
+
+		return message;
+	}
 
 	private long id;
 	private String body;
 	private String from;
+	private boolean sent;
 
 	public long getId() {
 		return id;
@@ -35,5 +46,13 @@ public class Message implements BaseColumns {
 	@Override
 	public String toString() {
 		return from + ": " + body;
+	}
+
+	public boolean isSent() {
+		return sent;
+	}
+
+	public void setSent(boolean sent) {
+		this.sent = sent;
 	}
 }

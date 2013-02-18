@@ -1,4 +1,4 @@
-package at.tomtasche.joppfm;
+package at.tomtasche.joppfm.xmpp;
 
 public interface ConnectionStatusCallback {
 

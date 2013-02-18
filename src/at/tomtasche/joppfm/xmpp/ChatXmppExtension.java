@@ -41,6 +41,9 @@ public class ChatXmppExtension {
 
 						Log.e("smn", from + ": " + body);
 
+						if (body == null || from == null)
+							return;
+
 						if (messageCallback != null)
 							messageCallback.onMessage(body, from, user);
 					}

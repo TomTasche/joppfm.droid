@@ -12,8 +12,9 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.Builder;
 import android.support.v4.app.TaskStackBuilder;
 import at.tomtasche.joppfm.xmpp.ConnectionManager;
+import at.tomtasche.joppfm.xmpp.ConnectionStatusCallback;
 
-public class ConnectionService extends Service implements MessageCallback,
+public class ConnectionService extends Service implements
 		ConnectionStatusCallback {
 
 	private ConnectionManager connectionManager;
@@ -25,8 +26,9 @@ public class ConnectionService extends Service implements MessageCallback,
 	public void onCreate() {
 		super.onCreate();
 
-		connectionManager = new ConnectionManager(this, this, this);
 		communicationManager = new CommunicationManager();
+		connectionManager = new ConnectionManager(this, this,
+				communicationManager);
 
 		HandlerThread workerThread = new HandlerThread(
 				"ConnectionService - WorkerThread");
@@ -79,20 +81,6 @@ public class ConnectionService extends Service implements MessageCallback,
 		notificationManager.notify(42, builder.build());
 
 		stopSelf();
-	}
-
-	@Override
-	public void onMessage(final String body, final String from, final String to) {
-		worker.post(new Runnable() {
-
-			@Override
-			public void run() {
-				if (body == null || from == null || to == null)
-					return;
-
-				communicationManager.onMessage(body, from, to, false);
-			}
-		});
 	}
 
 	@Override

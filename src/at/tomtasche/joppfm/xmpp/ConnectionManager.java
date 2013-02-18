@@ -11,11 +11,11 @@ import org.jivesoftware.smack.packet.Packet;
 
 import android.content.Context;
 import android.util.Log;
-import at.tomtasche.joppfm.ConnectionStatusCallback;
+import at.tomtasche.joppfm.CommunicationManager;
 import at.tomtasche.joppfm.MessageCallback;
 import at.tomtasche.joppfm.xmpp.gmail.GmailXmppExtension;
 
-public class ConnectionManager {
+public class ConnectionManager implements MessageCallback {
 
 	private SmackAndroid smack;
 	private XMPPConnection connection;
@@ -23,12 +23,13 @@ public class ConnectionManager {
 	private ChatXmppExtension chatExtension;
 	private MessageCallback messageCallback;
 	private ConnectionStatusCallback statusCallback;
+	private CommunicationManager communicationManager;
 
 	public ConnectionManager(Context context,
 			ConnectionStatusCallback statusCallback,
-			MessageCallback messageListener) {
+			CommunicationManager communicationManager) {
 		this.statusCallback = statusCallback;
-		this.messageCallback = messageListener;
+		this.communicationManager = communicationManager;
 
 		smack = SmackAndroid.init(context);
 
@@ -77,6 +78,11 @@ public class ConnectionManager {
 		chatExtension.setMessageCallback(messageCallback);
 
 		discoverServices();
+	}
+	
+	@Override
+	public void onMessage(String body, String from, String to) {
+		communicationManager.onMessage(body, from, to, false);
 	}
 
 	private void discoverServices() {

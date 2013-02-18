@@ -12,13 +12,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.widget.ArrayAdapter;
+import at.tomtasche.joppfm.database.DatabaseManager;
 import at.tomtasche.joppfm.database.Message;
-import at.tomtasche.joppfm.database.MessageDatabase;
 
 public class MainActivity extends ListActivity {
 
+	public static final String EXTRA_KEY_REAUTHORIZE = "reauthorize";
+
 	private AuthPreferences authPreferences;
-	private MessageDatabase database;
+	private DatabaseManager database;
 	private Handler handler;
 
 	@Override
@@ -27,7 +29,8 @@ public class MainActivity extends ListActivity {
 
 		authPreferences = new AuthPreferences(this);
 
-		invalidateToken();
+		if (getIntent().getBooleanExtra(EXTRA_KEY_REAUTHORIZE, false))
+			invalidateToken();
 
 		if (authPreferences.getUser() != null
 				&& authPreferences.getPassword() != null) {
@@ -36,7 +39,7 @@ public class MainActivity extends ListActivity {
 			requestToken();
 		}
 
-		database = new MessageDatabase(this);
+		database = new DatabaseManager(this);
 		database.open(false);
 
 		HandlerThread thread = new HandlerThread("workerThread");
@@ -66,7 +69,7 @@ public class MainActivity extends ListActivity {
 	}
 
 	private void queryMessages() {
-		final List<Message> values = database.getAllMessages();
+		final List<Message> values = database.getMessages();
 
 		runOnUiThread(new Runnable() {
 

@@ -11,6 +11,7 @@ import org.jivesoftware.smack.packet.Packet;
 
 import android.content.Context;
 import android.util.Log;
+import at.tomtasche.joppfm.ConnectionStatusCallback;
 import at.tomtasche.joppfm.MessageCallback;
 import at.tomtasche.joppfm.xmpp.gmail.GmailXmppExtension;
 
@@ -21,8 +22,12 @@ public class ConnectionManager {
 	private GmailXmppExtension gmailExtension;
 	private ChatXmppExtension chatExtension;
 	private MessageCallback messageCallback;
+	private ConnectionStatusCallback statusCallback;
 
-	public ConnectionManager(Context context, MessageCallback messageListener) {
+	public ConnectionManager(Context context,
+			ConnectionStatusCallback statusCallback,
+			MessageCallback messageListener) {
+		this.statusCallback = statusCallback;
 		this.messageCallback = messageListener;
 
 		smack = SmackAndroid.init(context);
@@ -51,8 +56,11 @@ public class ConnectionManager {
 			throw new RuntimeException(e);
 		}
 
-		if (!connection.isConnected())
-			throw new RuntimeException("Could not connect to XMPP server");
+		if (!connection.isConnected()) {
+			// throw new RuntimeException("Could not connect to XMPP server");
+
+			statusCallback.onConnectionFailed();
+		}
 
 		connection.addPacketListener(new PacketListener() {
 

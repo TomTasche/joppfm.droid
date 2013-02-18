@@ -1,41 +1,38 @@
 package at.tomtasche.joppfm;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.util.Log;
-import at.tomtasche.joppfm.database.MessageDatabase;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat.Builder;
+import android.support.v4.app.TaskStackBuilder;
 import at.tomtasche.joppfm.xmpp.ConnectionManager;
 
-public class ConnectionService extends Service implements MessageCallback {
+public class ConnectionService extends Service implements MessageCallback,
+		ConnectionStatusCallback {
 
-	private ConnectionManager manager;
+	private ConnectionManager connectionManager;
+	private CommunicationManager communicationManager;
 	private Handler worker;
-	private MessageDatabase database;
-
 	private AuthPreferences authPreferences;
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
 
-		manager = new ConnectionManager(this, this);
+		connectionManager = new ConnectionManager(this, this, this);
+		communicationManager = new CommunicationManager();
 
 		HandlerThread workerThread = new HandlerThread(
 				"ConnectionService - WorkerThread");
 		workerThread.start();
 
 		worker = new Handler(workerThread.getLooper());
-
-		worker.post(new Runnable() {
-
-			@Override
-			public void run() {
-				database = new MessageDatabase(ConnectionService.this);
-			}
-		});
 
 		authPreferences = new AuthPreferences(this);
 	}
@@ -48,31 +45,52 @@ public class ConnectionService extends Service implements MessageCallback {
 			public void run() {
 				String user = authPreferences.getUser();
 				String password = authPreferences.getPassword();
+				if (!connectionManager.isConnected() && user != null
+						&& password != null) {
+					communicationManager.initialize(ConnectionService.this);
 
-				Log.e("smn", "user: " + user);
-				Log.e("smn", "password: " + password);
-
-				if (!manager.isConnected() && user != null && password != null) {
-					database.open();
-
-					manager.connect(user, password);
+					connectionManager.connect(user, password);
 				}
 			}
 		});
 
-		return Service.START_NOT_STICKY;
+		return Service.START_STICKY;
 	}
 
 	@Override
-	public void onMessage(final String body, final String from) {
+	public void onConnectionFailed() {
+		Builder builder = new NotificationCompat.Builder(this);
+		builder.setSmallIcon(R.drawable.ic_launcher)
+				.setContentTitle("Connection failed")
+				.setContentText("Permissions need to be granted first");
+
+		Intent intent = new Intent(this, MainActivity.class);
+		intent.putExtra(MainActivity.EXTRA_KEY_REAUTHORIZE, true);
+
+		TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+		stackBuilder.addParentStack(MainActivity.class);
+		stackBuilder.addNextIntent(intent);
+		PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0,
+				PendingIntent.FLAG_UPDATE_CURRENT);
+
+		builder.setContentIntent(resultPendingIntent);
+
+		NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+		notificationManager.notify(42, builder.build());
+
+		stopSelf();
+	}
+
+	@Override
+	public void onMessage(final String body, final String from, final String to) {
 		worker.post(new Runnable() {
 
 			@Override
 			public void run() {
-				if (body == null || from == null)
+				if (body == null || from == null || to == null)
 					return;
 
-				database.createMessage(body, from);
+				communicationManager.onMessage(body, from, to, false);
 			}
 		});
 	}
@@ -85,7 +103,9 @@ public class ConnectionService extends Service implements MessageCallback {
 
 			@Override
 			public void run() {
-				manager.disconnect();
+				connectionManager.disconnect();
+
+				communicationManager.close();
 
 				worker.getLooper().quit();
 			}

@@ -20,9 +20,8 @@ public class MessageSchema implements BaseColumns {
 		return "create table " + TABLE_NAME + " (" + COLUMN_ID
 				+ " integer primary key autoincrement, " + COLUMN_TIMESTAMP
 				+ " integer not null, " + COLUMN_BODY + " text not null, "
-				+ COLUMN_FROM + " text not null, " + COLUMN_PENDING
-				+ " integer not null, " + COLUMN_FROM + " integer not null, "
-				+ COLUMN_TO + " integer not null);";
+				+ COLUMN_FROM + " text not null, " + COLUMN_TO
+				+ " text not null, " + COLUMN_PENDING + " integer not null);";
 	}
 
 	public static int getColumnIndex(String name) {

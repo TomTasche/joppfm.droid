@@ -84,6 +84,8 @@ public class DatabaseManager extends SQLiteOpenHelper {
 		try {
 			if (!cursor.moveToFirst()) {
 				// throw new RuntimeException("no messages in database");
+
+				return messages;
 			}
 
 			do {

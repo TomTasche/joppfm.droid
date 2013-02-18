@@ -44,6 +44,7 @@ public class MainActivity extends ListActivity {
 
 		HandlerThread thread = new HandlerThread("workerThread");
 		thread.start();
+
 		handler = new Handler(thread.getLooper());
 		handler.post(new Runnable() {
 
@@ -57,6 +58,8 @@ public class MainActivity extends ListActivity {
 	}
 
 	private void scheduleRequery() {
+		// TODO: eventually use a ContentProvider + ContentObserver instead
+
 		handler.postDelayed(new Runnable() {
 
 			@Override

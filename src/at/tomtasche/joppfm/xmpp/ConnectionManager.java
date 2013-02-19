@@ -21,7 +21,6 @@ public class ConnectionManager implements MessageCallback {
 	private XMPPConnection connection;
 	private GmailXmppExtension gmailExtension;
 	private ChatXmppExtension chatExtension;
-	private MessageCallback messageCallback;
 	private ConnectionStatusCallback statusCallback;
 	private CommunicationManager communicationManager;
 
@@ -54,13 +53,15 @@ public class ConnectionManager implements MessageCallback {
 			connection.connect();
 			connection.login(user, password, "joppfm");
 		} catch (XMPPException e) {
-			throw new RuntimeException(e);
+			// throw new RuntimeException(e);
+
+			statusCallback.onConnectionFailed();
+
+			return;
 		}
 
 		if (!connection.isConnected()) {
 			// throw new RuntimeException("Could not connect to XMPP server");
-
-			statusCallback.onConnectionFailed();
 		}
 
 		connection.addPacketListener(new PacketListener() {
@@ -75,11 +76,11 @@ public class ConnectionManager implements MessageCallback {
 		gmailExtension.queryMails();
 
 		chatExtension = new ChatXmppExtension(connection);
-		chatExtension.setMessageCallback(messageCallback);
+		chatExtension.setMessageCallback(this);
 
 		discoverServices();
 	}
-	
+
 	@Override
 	public void onMessage(String body, String from, String to) {
 		communicationManager.onMessage(body, from, to, false);
